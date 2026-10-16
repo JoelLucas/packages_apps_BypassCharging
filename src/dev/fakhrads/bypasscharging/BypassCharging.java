@@ -7,38 +7,46 @@ package dev.fakhrads.bypasscharging;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.BatteryManager;
 import android.util.Log;
 
 import lineageos.health.HealthInterface;
 
 /**
- * Turns "bypass charging" on and off through Lineage Health charging control.
+ * Turns bypass charging on and off through Lineage Health charging control (limit mode).
  *
- * On onyx the Lineage Health HAL writes the MCA smart_night node. With smart_night set, the
- * kernel stops charging the battery at 80% and keeps the phone running from the charger; it
- * resumes charging at 75%. Bypass here is charging control in limit mode at that same 80%, so
- * the framework and the kernel agree on the threshold. Nothing is written to sysfs directly and
- * no root is needed.
+ * On onyx the Lineage Health HAL drives the MCA smart_chg node: when the framework disables
+ * charging, the kernel stops charging the battery and the charger keeps powering the phone.
+ * Two modes:
+ * - smart: limit 80%, charging resumes 3% below (config_chargingControlBatteryRechargeMargin)
+ * - bypass: limit at the battery level when it was turned on, so the battery holds that level
  *
- * The charging control settings in use before bypass was turned on are saved and put back when
- * it is turned off, so the Settings > Battery > Charging control page keeps the user's choice.
+ * The charging control settings in use before are saved and put back when it is turned off,
+ * and BootReceiver turns it off after every boot. Nothing is written to sysfs directly and no
+ * root is needed.
  */
 final class BypassCharging {
     private static final String TAG = "BypassCharging";
 
-    /** Matches SMART_CHG_SOCLMT_TRIG_DEFAULT in the MCA smart charge driver. */
-    static final int LIMIT = 80;
+    static final int MODE_SMART = 0;
+    static final int MODE_BYPASS = 1;
 
-    private static final String PREFS = "saved_charging_control";
-    private static final String KEY_SAVED = "saved";
-    private static final String KEY_ENABLED = "enabled";
+    static final int SMART_LIMIT = 80;
+
+    private static final String PREFS = "bypass_charging";
     private static final String KEY_MODE = "mode";
-    private static final String KEY_LIMIT = "limit";
+    // Present only while this app has charging control switched on
+    private static final String KEY_ACTIVE_LIMIT = "active_limit";
+    private static final String KEY_SAVED_ENABLED = "saved_enabled";
+    private static final String KEY_SAVED_MODE = "saved_mode";
+    private static final String KEY_SAVED_LIMIT = "saved_limit";
 
+    private final Context mContext;
     private final HealthInterface mHealth;
     private final SharedPreferences mPrefs;
 
     BypassCharging(Context context) {
+        mContext = context;
         HealthInterface health = null;
         try {
             health = HealthInterface.getInstance(context);
@@ -46,7 +54,7 @@ final class BypassCharging {
             Log.e(TAG, "Lineage Health service unavailable", e);
         }
         mHealth = health;
-        // Device protected storage, so the tile works before the first unlock too
+        // Device protected storage: usable before the first unlock (tile, boot receiver)
         mPrefs = context.createDeviceProtectedStorageContext()
                 .getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
@@ -55,58 +63,94 @@ final class BypassCharging {
         return mHealth != null && mHealth.isChargingControlSupported();
     }
 
+    int getMode() {
+        return mPrefs.getInt(KEY_MODE, MODE_SMART);
+    }
+
+    /** Selects the mode; if bypass is on, it is applied again with the new mode. */
+    boolean setMode(int mode) {
+        mPrefs.edit().putInt(KEY_MODE, mode).apply();
+        return !isActive() || apply();
+    }
+
+    /** The limit in use while active, otherwise -1. */
+    int getActiveLimit() {
+        return isActive() ? mPrefs.getInt(KEY_ACTIVE_LIMIT, -1) : -1;
+    }
+
     boolean isActive() {
         return isSupported()
+                && mPrefs.contains(KEY_ACTIVE_LIMIT)
                 && mHealth.getEnabled()
                 && mHealth.getMode() == HealthInterface.MODE_LIMIT
-                && mHealth.getLimit() == LIMIT;
+                && mHealth.getLimit() == mPrefs.getInt(KEY_ACTIVE_LIMIT, -1);
     }
 
     /** @return true if the new state was applied */
     boolean setActive(boolean active) {
-        if (!isSupported() || active == isActive()) {
-            return isSupported();
+        if (!isSupported()) {
+            return false;
         }
-        return active ? enable() : disable();
+        if (active == isActive()) {
+            return true;
+        }
+        if (!active) {
+            restore();
+            return !isActive();
+        }
+        if (!mPrefs.contains(KEY_SAVED_ENABLED)) {
+            mPrefs.edit()
+                    .putBoolean(KEY_SAVED_ENABLED, mHealth.getEnabled())
+                    .putInt(KEY_SAVED_MODE, mHealth.getMode())
+                    .putInt(KEY_SAVED_LIMIT, mHealth.getLimit())
+                    .apply();
+        }
+        return apply();
     }
 
-    private boolean enable() {
+    /** Puts back the saved charging control settings if this app changed them. */
+    void restore() {
+        if (mHealth == null) {
+            return;
+        }
+        if (mPrefs.contains(KEY_SAVED_ENABLED)) {
+            int mode = mPrefs.getInt(KEY_SAVED_MODE, HealthInterface.MODE_NONE);
+            if (mode != HealthInterface.MODE_NONE) {
+                mHealth.setMode(mode);
+            }
+            mHealth.setLimit(mPrefs.getInt(KEY_SAVED_LIMIT, SMART_LIMIT));
+            mHealth.setEnabled(mPrefs.getBoolean(KEY_SAVED_ENABLED, false));
+        } else if (mPrefs.contains(KEY_ACTIVE_LIMIT)) {
+            mHealth.setEnabled(false);
+        }
         mPrefs.edit()
-                .putBoolean(KEY_SAVED, true)
-                .putBoolean(KEY_ENABLED, mHealth.getEnabled())
-                .putInt(KEY_MODE, mHealth.getMode())
-                .putInt(KEY_LIMIT, mHealth.getLimit())
+                .remove(KEY_ACTIVE_LIMIT)
+                .remove(KEY_SAVED_ENABLED)
+                .remove(KEY_SAVED_MODE)
+                .remove(KEY_SAVED_LIMIT)
                 .apply();
+    }
+
+    private boolean apply() {
+        int limit = getMode() == MODE_BYPASS ? batteryLevel() : SMART_LIMIT;
+        if (limit < 1) {
+            Log.e(TAG, "Unknown battery level");
+            return false;
+        }
+        mPrefs.edit().putInt(KEY_ACTIVE_LIMIT, limit).apply();
         boolean ok = mHealth.setMode(HealthInterface.MODE_LIMIT)
-                && mHealth.setLimit(LIMIT)
+                && mHealth.setLimit(limit)
                 && mHealth.setEnabled(true);
         if (!ok) {
-            Log.e(TAG, "Failed to enable charging control limit mode");
+            Log.e(TAG, "Failed to set charging control to limit " + limit);
             restore();
         }
         return ok;
     }
 
-    private boolean disable() {
-        restore();
-        // The saved settings may themselves be limit mode at 80%: then just turn control off
-        if (isActive()) {
-            mHealth.setEnabled(false);
-        }
-        return !isActive();
-    }
-
-    private void restore() {
-        if (!mPrefs.getBoolean(KEY_SAVED, false)) {
-            mHealth.setEnabled(false);
-            return;
-        }
-        int mode = mPrefs.getInt(KEY_MODE, HealthInterface.MODE_NONE);
-        if (mode != HealthInterface.MODE_NONE) {
-            mHealth.setMode(mode);
-        }
-        mHealth.setLimit(mPrefs.getInt(KEY_LIMIT, LIMIT));
-        mHealth.setEnabled(mPrefs.getBoolean(KEY_ENABLED, false));
-        mPrefs.edit().clear().apply();
+    private int batteryLevel() {
+        BatteryManager bm = mContext.getSystemService(BatteryManager.class);
+        int level = bm == null ? -1 : bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+        return Math.min(level, 100);
     }
 }

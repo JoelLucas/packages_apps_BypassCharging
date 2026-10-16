@@ -3,14 +3,17 @@
      SPDX-FileCopyrightText: 2026 Fakhri Adi Saputra
      SPDX-License-Identifier: Apache-2.0
 -->
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Bypass charging</string>
     <string name="tile_label">Bypass charging</string>
-    <string name="tile_subtitle_on">Stops at <xliff:g id="limit" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%1$d</xliff:g>%%</string>
-    <string name="tile_subtitle_off">Off</string>
-    <string name="status_on">On</string>
+    <string name="mode_smart">Smart</string>
+    <string name="mode_bypass">Bypass</string>
+    <string name="subtitle_smart_on">Smart, stops at <xliff:g id="limit">%1$d</xliff:g>%%</string>
+    <string name="subtitle_bypass_on">Holding <xliff:g id="limit">%1$d</xliff:g>%%</string>
     <string name="status_off">Off</string>
     <string name="not_supported">Charging control is not available</string>
     <string name="toggle_failed">Could not change charging control</string>
-    <string name="summary">While the charger is plugged in, the battery stops charging at <xliff:g id="limit" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%1$d</xliff:g>%% and the phone runs from the charger instead, so the battery stays cooler while gaming or recording. Charging resumes when the battery drops to <xliff:g id="resume" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%2$d</xliff:g>%%.\n\nBelow that level the phone charges normally. This uses Settings > Battery > Charging control (limit mode); your previous charging control settings come back when bypass is turned off.</string>
+    <string name="summary_smart">The battery charges up to <xliff:g id="limit">%1$d</xliff:g>%%, then the phone runs from the charger. Charging resumes at <xliff:g id="resume">%2$d</xliff:g>%%.</string>
+    <string name="summary_bypass" formatted="false">The battery stops charging at its current level and the phone runs from the charger, for gaming or recording while plugged in. If the phone needs more power than the charger gives, the battery tops up again once it is 3% lower.</string>
+    <string name="summary_common">Bypass turns itself off after a reboot. It uses Settings &gt; Battery &gt; Charging control (limit mode); your previous charging control settings come back when it is turned off.</string>
 </resources>

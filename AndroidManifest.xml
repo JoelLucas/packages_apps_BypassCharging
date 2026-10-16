@@ -8,6 +8,7 @@
 
     <!-- Charging control state lives in LineageSettings.System -->
     <uses-permission android:name="lineageos.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:label="@string/app_name"
@@ -35,5 +36,16 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+
+        <!-- Turns bypass off after every boot, before the first unlock -->
+        <receiver
+            android:name=".BootReceiver"
+            android:directBootAware="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

@@ -3,14 +3,17 @@
      SPDX-FileCopyrightText: 2026 Fakhri Adi Saputra
      SPDX-License-Identifier: Apache-2.0
 -->
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Bypass charging</string>
     <string name="tile_label">Bypass charging</string>
-    <string name="tile_subtitle_on">Berhenti di <xliff:g id="limit" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%1$d</xliff:g>%%</string>
-    <string name="tile_subtitle_off">Mati</string>
-    <string name="status_on">Aktif</string>
+    <string name="mode_smart">Smart</string>
+    <string name="mode_bypass">Bypass</string>
+    <string name="subtitle_smart_on">Smart, berhenti di <xliff:g id="limit">%1$d</xliff:g>%%</string>
+    <string name="subtitle_bypass_on">Menahan <xliff:g id="limit">%1$d</xliff:g>%%</string>
     <string name="status_off">Mati</string>
     <string name="not_supported">Kontrol pengisian daya tidak tersedia</string>
     <string name="toggle_failed">Gagal mengubah kontrol pengisian daya</string>
-    <string name="summary">Selama charger tercolok, baterai berhenti diisi di <xliff:g id="limit" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%1$d</xliff:g>%% dan HP berjalan langsung dari charger, jadi baterai lebih adem saat main game atau merekam video. Pengisian lanjut lagi saat baterai turun ke <xliff:g id="resume" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%2$d</xliff:g>%%.\n\nDi bawah level itu HP mengisi daya seperti biasa. Fitur ini memakai Setelan > Baterai > Kontrol pengisian daya (mode batas); setelan sebelumnya dikembalikan saat bypass dimatikan.</string>
+    <string name="summary_smart">Baterai diisi sampai <xliff:g id="limit">%1$d</xliff:g>%%, lalu HP berjalan dari charger. Pengisian lanjut lagi di <xliff:g id="resume">%2$d</xliff:g>%%.</string>
+    <string name="summary_bypass" formatted="false">Baterai berhenti diisi di level saat ini dan HP berjalan langsung dari charger, cocok untuk main game atau merekam video sambil dicas. Kalau HP butuh daya lebih besar dari charger, baterai diisi lagi setelah turun 3%.</string>
+    <string name="summary_common">Bypass otomatis mati setelah reboot. Fitur ini memakai Setelan &gt; Baterai &gt; Kontrol pengisian daya (mode batas); setelan sebelumnya dikembalikan saat bypass dimatikan.</string>
 </resources>

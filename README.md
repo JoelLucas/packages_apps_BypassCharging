@@ -1,19 +1,33 @@
 # Bypass charging
 
-Quick Settings tile for Evolution X on the POCO F7 (onyx) that stops charging the battery at 80% while the
-charger keeps powering the phone. No root.
+Quick Settings tile for Evolution X on the POCO F7 (onyx): while the charger is plugged in, the battery stops
+charging and the charger powers the phone. No root.
 
-It replaces the root-only "Bypass Charging" tile (`com.qs.bypass.charging`), which ran
-`su -c "echo 1 > /sys/class/xm_power/charger/smart_charge/smart_night"`. That node is already driven by Lineage
-Health on this device, so this app goes through the Lineage SDK instead (`lineageos.health.HealthInterface`):
-turning the tile on sets Settings > Battery > Charging control to limit mode at 80% and enables it; turning it off
-puts the previous charging control settings back.
+Two modes, chosen on the page that opens with a long press on the tile:
 
-What the kernel does (MCA `mca_smart_charge.c`, `mca_strategy_buckchg.c`): with `smart_night` set, charging is
-disabled at 80% and re-enabled at 75% (`SMART_CHG_SOCLMT_TRIG_DEFAULT`, `SMART_CHG_SOCLMT_CANCEL_DEFAULT`).
-Below 80% the phone charges as usual.
+- **Smart**: charge up to 80%, then run from the charger; charging resumes at 77%.
+- **Bypass**: hold the battery at the level it had when the tile was turned on. The battery only tops up again
+  once it is 3% lower (when the phone draws more than the charger gives).
 
-Long-press the tile for a page with the same switch and this explanation.
+Bypass turns itself off after every reboot (`BootReceiver`, on `LOCKED_BOOT_COMPLETED`), and the charging control
+settings from before it was turned on come back whenever it is turned off.
+
+## How it works
+
+The app only uses the Lineage SDK (`lineageos.health.HealthInterface`): it switches Settings > Battery > Charging
+control to limit mode with the limit above and enables it. The Lineage Health HAL then writes the MCA `smart_chg`
+node, configured in the device tree:
+
+| `smart_chg` value | meaning |
+|---|---|
+| `65553` (`0x10011`) | enable + `endurance_pro` (bit 4) + `soc_limit` 1: stop charging the battery now, at any level |
+| `16` | `endurance_pro` off: charge normally |
+
+`smart_chg` reads back a feature mask rather than the written value, so the device overlay sets
+`config_chargingControlToggleSetAlways`, and `config_chargingControlBatteryRechargeMargin` is 3.
+
+It replaces a root-only tile (`com.qs.bypass.charging`) that wrote `smart_night`, which the kernel only honours
+at a fixed 80%.
 
 ## Build
 
@@ -23,5 +37,5 @@ In the device tree:
 PRODUCT_PACKAGES += BypassCharging
 ```
 
-The app is platform-signed and installed to `system_ext`. It needs the Lineage Health service with charging
-control support (`vendor.lineage.health-service.default` and the `lineage_health` soong config in `device.mk`).
+Platform-signed, installed to `system_ext`. Needs `vendor.lineage.health-service.default` with charging control
+on `smart_chg` (see `device.mk` in `fakhrads/android_device_xiaomi_onyx`, branch `evo-cnb`).

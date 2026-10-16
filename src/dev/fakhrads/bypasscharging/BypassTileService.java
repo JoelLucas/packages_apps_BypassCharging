@@ -27,12 +27,7 @@ public class BypassTileService extends TileService {
     @Override
     public void onClick() {
         super.onClick();
-        if (!mBypass.isSupported()) {
-            updateTile();
-            return;
-        }
-        boolean target = !mBypass.isActive();
-        if (!mBypass.setActive(target)) {
+        if (mBypass.isSupported() && !mBypass.setActive(!mBypass.isActive())) {
             Toast.makeText(this, R.string.toggle_failed, Toast.LENGTH_SHORT).show();
         }
         updateTile();
@@ -48,10 +43,13 @@ public class BypassTileService extends TileService {
             tile.setSubtitle(getString(R.string.not_supported));
         } else if (mBypass.isActive()) {
             tile.setState(Tile.STATE_ACTIVE);
-            tile.setSubtitle(getString(R.string.tile_subtitle_on, BypassCharging.LIMIT));
+            tile.setSubtitle(getString(mBypass.getMode() == BypassCharging.MODE_BYPASS
+                    ? R.string.subtitle_bypass_on : R.string.subtitle_smart_on,
+                    mBypass.getActiveLimit()));
         } else {
             tile.setState(Tile.STATE_INACTIVE);
-            tile.setSubtitle(getString(R.string.tile_subtitle_off));
+            tile.setSubtitle(getString(mBypass.getMode() == BypassCharging.MODE_BYPASS
+                    ? R.string.mode_bypass : R.string.mode_smart));
         }
         tile.updateTile();
     }

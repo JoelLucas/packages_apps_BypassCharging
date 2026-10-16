@@ -29,11 +29,49 @@
             android:paddingTop="4dp"
             android:textAppearance="?android:attr/textAppearanceSmall" />
 
+        <RadioGroup
+            android:id="@+id/modes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="24dp">
+
+            <RadioButton
+                android:id="@+id/mode_smart"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/mode_smart"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:id="@+id/summary_smart"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="32dp"
+                android:paddingBottom="12dp"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+            <RadioButton
+                android:id="@+id/mode_bypass"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/mode_bypass"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="32dp"
+                android:text="@string/summary_bypass"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+        </RadioGroup>
+
         <TextView
-            android:id="@+id/summary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="24dp"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:text="@string/summary_common"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
     </LinearLayout>
 </ScrollView>

@@ -14,6 +14,6 @@
     <string name="not_supported">Charging control is not available</string>
     <string name="toggle_failed">Could not change charging control</string>
     <string name="summary_smart">The battery charges up to <xliff:g id="limit">%1$d</xliff:g>%%, then the phone runs from the charger. Charging resumes at <xliff:g id="resume">%2$d</xliff:g>%%.</string>
-    <string name="summary_bypass" formatted="false">The battery stops charging at its current level and the phone runs from the charger, for gaming or recording while plugged in. If the phone needs more power than the charger gives, the battery tops up again once it is 3% lower.</string>
+    <string name="summary_bypass" formatted="false">The battery stops charging at its current level (below 70% it charges to 70% first) and the phone runs from the charger, for gaming or recording while plugged in. If the phone needs more power than the charger gives, the battery tops up again once it is 3% lower.</string>
     <string name="summary_common">Bypass turns itself off after a reboot. It uses Settings &gt; Battery &gt; Charging control (limit mode); your previous charging control settings come back when it is turned off.</string>
 </resources>

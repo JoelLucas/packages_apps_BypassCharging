@@ -14,6 +14,6 @@
     <string name="not_supported">Kontrol pengisian daya tidak tersedia</string>
     <string name="toggle_failed">Gagal mengubah kontrol pengisian daya</string>
     <string name="summary_smart">Baterai diisi sampai <xliff:g id="limit">%1$d</xliff:g>%%, lalu HP berjalan dari charger. Pengisian lanjut lagi di <xliff:g id="resume">%2$d</xliff:g>%%.</string>
-    <string name="summary_bypass" formatted="false">Baterai berhenti diisi di level saat ini dan HP berjalan langsung dari charger, cocok untuk main game atau merekam video sambil dicas. Kalau HP butuh daya lebih besar dari charger, baterai diisi lagi setelah turun 3%.</string>
+    <string name="summary_bypass" formatted="false">Baterai berhenti diisi di level saat ini (di bawah 70%, diisi dulu sampai 70%) dan HP berjalan langsung dari charger, cocok untuk main game atau merekam video sambil dicas. Kalau HP butuh daya lebih besar dari charger, baterai diisi lagi setelah turun 3%.</string>
     <string name="summary_common">Bypass otomatis mati setelah reboot. Fitur ini memakai Setelan &gt; Baterai &gt; Kontrol pengisian daya (mode batas); setelan sebelumnya dikembalikan saat bypass dimatikan.</string>
 </resources>

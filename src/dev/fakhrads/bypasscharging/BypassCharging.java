@@ -19,7 +19,8 @@ import lineageos.health.HealthInterface;
  * charging, the kernel stops charging the battery and the charger keeps powering the phone.
  * Two modes:
  * - smart: limit 80%, charging resumes 3% below (config_chargingControlBatteryRechargeMargin)
- * - bypass: limit at the battery level when it was turned on, so the battery holds that level
+ * - bypass: limit at the battery level when it was turned on, so the battery holds that level;
+ *   LineageSettings only accepts limits from 70 to 100, so below 70% it charges to 70% first
  *
  * The charging control settings in use before are saved and put back when it is turned off,
  * and BootReceiver turns it off after every boot. Nothing is written to sysfs directly and no
@@ -32,6 +33,9 @@ final class BypassCharging {
     static final int MODE_BYPASS = 1;
 
     static final int SMART_LIMIT = 80;
+    // Range of LineageSettings.System.CHARGING_CONTROL_LIMIT_VALIDATOR
+    static final int MIN_LIMIT = 70;
+    static final int MAX_LIMIT = 100;
 
     private static final String PREFS = "bypass_charging";
     private static final String KEY_MODE = "mode";
@@ -113,15 +117,10 @@ final class BypassCharging {
         if (mHealth == null) {
             return;
         }
-        if (mPrefs.contains(KEY_SAVED_ENABLED)) {
-            int mode = mPrefs.getInt(KEY_SAVED_MODE, HealthInterface.MODE_NONE);
-            if (mode != HealthInterface.MODE_NONE) {
-                mHealth.setMode(mode);
-            }
-            mHealth.setLimit(mPrefs.getInt(KEY_SAVED_LIMIT, SMART_LIMIT));
-            mHealth.setEnabled(mPrefs.getBoolean(KEY_SAVED_ENABLED, false));
-        } else if (mPrefs.contains(KEY_ACTIVE_LIMIT)) {
-            mHealth.setEnabled(false);
+        try {
+            restoreSettings();
+        } catch (RuntimeException e) {
+            Log.e(TAG, "Failed to restore charging control", e);
         }
         mPrefs.edit()
                 .remove(KEY_ACTIVE_LIMIT)
@@ -131,16 +130,36 @@ final class BypassCharging {
                 .apply();
     }
 
+    private void restoreSettings() {
+        if (mPrefs.contains(KEY_SAVED_ENABLED)) {
+            int mode = mPrefs.getInt(KEY_SAVED_MODE, HealthInterface.MODE_NONE);
+            if (mode != HealthInterface.MODE_NONE) {
+                mHealth.setMode(mode);
+            }
+            mHealth.setLimit(clampLimit(mPrefs.getInt(KEY_SAVED_LIMIT, SMART_LIMIT)));
+            mHealth.setEnabled(mPrefs.getBoolean(KEY_SAVED_ENABLED, false));
+        } else if (mPrefs.contains(KEY_ACTIVE_LIMIT)) {
+            mHealth.setEnabled(false);
+        }
+    }
+
     private boolean apply() {
-        int limit = getMode() == MODE_BYPASS ? batteryLevel() : SMART_LIMIT;
-        if (limit < 1) {
+        int level = getMode() == MODE_BYPASS ? batteryLevel() : SMART_LIMIT;
+        if (level < 1) {
             Log.e(TAG, "Unknown battery level");
             return false;
         }
+        int limit = clampLimit(level);
         mPrefs.edit().putInt(KEY_ACTIVE_LIMIT, limit).apply();
-        boolean ok = mHealth.setMode(HealthInterface.MODE_LIMIT)
-                && mHealth.setLimit(limit)
-                && mHealth.setEnabled(true);
+        boolean ok;
+        try {
+            ok = mHealth.setMode(HealthInterface.MODE_LIMIT)
+                    && mHealth.setLimit(limit)
+                    && mHealth.setEnabled(true);
+        } catch (RuntimeException e) {
+            Log.e(TAG, "Charging control rejected limit " + limit, e);
+            ok = false;
+        }
         if (!ok) {
             Log.e(TAG, "Failed to set charging control to limit " + limit);
             restore();
@@ -152,5 +171,9 @@ final class BypassCharging {
         BatteryManager bm = mContext.getSystemService(BatteryManager.class);
         int level = bm == null ? -1 : bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
         return Math.min(level, 100);
+    }
+
+    private static int clampLimit(int limit) {
+        return Math.max(MIN_LIMIT, Math.min(limit, MAX_LIMIT));
     }
 }

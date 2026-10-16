@@ -7,7 +7,8 @@ Two modes, chosen on the page that opens with a long press on the tile:
 
 - **Smart**: charge up to 80%, then run from the charger; charging resumes at 77%.
 - **Bypass**: hold the battery at the level it had when the tile was turned on. The battery only tops up again
-  once it is 3% lower (when the phone draws more than the charger gives).
+  once it is 3% lower (when the phone draws more than the charger gives). Charging control only accepts limits
+  from 70 to 100 (`CHARGING_CONTROL_LIMIT_VALIDATOR`), so below 70% the battery charges to 70% first.
 
 Bypass turns itself off after every reboot (`BootReceiver`, on `LOCKED_BOOT_COMPLETED`), and the charging control
 settings from before it was turned on come back whenever it is turned off.

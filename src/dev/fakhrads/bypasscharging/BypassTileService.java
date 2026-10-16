@@ -28,7 +28,10 @@ public class BypassTileService extends TileService {
     public void onClick() {
         super.onClick();
         if (mBypass.isSupported() && !mBypass.setActive(!mBypass.isActive())) {
-            Toast.makeText(this, R.string.toggle_failed, Toast.LENGTH_SHORT).show();
+            String error = mBypass.getLastError();
+            String text = getString(R.string.toggle_failed);
+            Toast.makeText(this, error == null ? text : text + ": " + error,
+                    Toast.LENGTH_LONG).show();
         }
         updateTile();
     }

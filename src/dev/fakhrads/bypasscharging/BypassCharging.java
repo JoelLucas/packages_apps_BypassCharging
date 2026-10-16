@@ -48,6 +48,7 @@ final class BypassCharging {
     private final Context mContext;
     private final HealthInterface mHealth;
     private final SharedPreferences mPrefs;
+    private String mLastError;
 
     BypassCharging(Context context) {
         mContext = context;
@@ -63,6 +64,11 @@ final class BypassCharging {
                 .getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
+    /** Why the last setActive/setMode failed, for the toast; null if unknown. */
+    String getLastError() {
+        return mLastError;
+    }
+
     boolean isSupported() {
         return mHealth != null && mHealth.isChargingControlSupported();
     }
@@ -73,6 +79,7 @@ final class BypassCharging {
 
     /** Selects the mode; if bypass is on, it is applied again with the new mode. */
     boolean setMode(int mode) {
+        mLastError = null;
         mPrefs.edit().putInt(KEY_MODE, mode).apply();
         return !isActive() || apply();
     }
@@ -92,6 +99,7 @@ final class BypassCharging {
 
     /** @return true if the new state was applied */
     boolean setActive(boolean active) {
+        mLastError = null;
         if (!isSupported()) {
             return false;
         }
@@ -121,6 +129,7 @@ final class BypassCharging {
             restoreSettings();
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to restore charging control", e);
+            mLastError = e.toString();
         }
         mPrefs.edit()
                 .remove(KEY_ACTIVE_LIMIT)
@@ -147,24 +156,30 @@ final class BypassCharging {
         int level = getMode() == MODE_BYPASS ? batteryLevel() : SMART_LIMIT;
         if (level < 1) {
             Log.e(TAG, "Unknown battery level");
+            mLastError = "battery level " + level;
             return false;
         }
         int limit = clampLimit(level);
         mPrefs.edit().putInt(KEY_ACTIVE_LIMIT, limit).apply();
-        boolean ok;
+        String error = null;
         try {
-            ok = mHealth.setMode(HealthInterface.MODE_LIMIT)
-                    && mHealth.setLimit(limit)
-                    && mHealth.setEnabled(true);
+            if (!mHealth.setMode(HealthInterface.MODE_LIMIT)) {
+                error = "setMode(MODE_LIMIT) returned false";
+            } else if (!mHealth.setLimit(limit)) {
+                error = "setLimit(" + limit + ") returned false";
+            } else if (!mHealth.setEnabled(true)) {
+                error = "setEnabled(true) returned false";
+            }
         } catch (RuntimeException e) {
             Log.e(TAG, "Charging control rejected limit " + limit, e);
-            ok = false;
+            error = e.toString();
         }
-        if (!ok) {
-            Log.e(TAG, "Failed to set charging control to limit " + limit);
+        if (error != null) {
+            Log.e(TAG, "Failed to set charging control to limit " + limit + ": " + error);
             restore();
+            mLastError = error;
         }
-        return ok;
+        return error == null;
     }
 
     private int batteryLevel() {

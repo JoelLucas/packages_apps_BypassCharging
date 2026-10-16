@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
                 return;
             }
             if (!mBypass.setActive(checked)) {
-                Toast.makeText(this, R.string.toggle_failed, Toast.LENGTH_SHORT).show();
+                showFailed();
             }
             changed();
         });
@@ -49,7 +49,7 @@ public class MainActivity extends Activity {
             int mode = id == R.id.mode_bypass ? BypassCharging.MODE_BYPASS
                     : BypassCharging.MODE_SMART;
             if (!mBypass.setMode(mode)) {
-                Toast.makeText(this, R.string.toggle_failed, Toast.LENGTH_SHORT).show();
+                showFailed();
             }
             changed();
         });
@@ -59,6 +59,12 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         refresh();
+    }
+
+    private void showFailed() {
+        String error = mBypass.getLastError();
+        String text = getString(R.string.toggle_failed);
+        Toast.makeText(this, error == null ? text : text + ": " + error, Toast.LENGTH_LONG).show();
     }
 
     private void changed() {

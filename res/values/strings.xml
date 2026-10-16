@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Fakhri Adi Saputra
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Bypass charging</string>
+    <string name="tile_label">Bypass charging</string>
+    <string name="tile_subtitle_on">Stops at <xliff:g id="limit" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%1$d</xliff:g>%%</string>
+    <string name="tile_subtitle_off">Off</string>
+    <string name="status_on">On</string>
+    <string name="status_off">Off</string>
+    <string name="not_supported">Charging control is not available</string>
+    <string name="toggle_failed">Could not change charging control</string>
+    <string name="summary">While the charger is plugged in, the battery stops charging at <xliff:g id="limit" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%1$d</xliff:g>%% and the phone runs from the charger instead, so the battery stays cooler while gaming or recording. Charging resumes when the battery drops to <xliff:g id="resume" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%2$d</xliff:g>%%.\n\nBelow that level the phone charges normally. This uses Settings > Battery > Charging control (limit mode); your previous charging control settings come back when bypass is turned off.</string>
+</resources>

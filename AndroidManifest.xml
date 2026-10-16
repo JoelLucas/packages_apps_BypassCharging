@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Fakhri Adi Saputra
+     SPDX-License-Identifier: Apache-2.0
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="dev.fakhrads.bypasscharging">
+
+    <!-- Charging control state lives in LineageSettings.System -->
+    <uses-permission android:name="lineageos.permission.WRITE_SETTINGS" />
+
+    <application
+        android:label="@string/app_name"
+        android:icon="@drawable/ic_bypass_charging"
+        android:supportsRtl="true"
+        android:allowBackup="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:theme="@android:style/Theme.DeviceDefault.DayNight"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".BypassTileService"
+            android:label="@string/tile_label"
+            android:icon="@drawable/ic_bypass_charging"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

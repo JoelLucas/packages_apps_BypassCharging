@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Fakhri Adi Saputra
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Bypass charging</string>
+    <string name="tile_label">Bypass charging</string>
+    <string name="tile_subtitle_on">Berhenti di <xliff:g id="limit" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%1$d</xliff:g>%%</string>
+    <string name="tile_subtitle_off">Mati</string>
+    <string name="status_on">Aktif</string>
+    <string name="status_off">Mati</string>
+    <string name="not_supported">Kontrol pengisian daya tidak tersedia</string>
+    <string name="toggle_failed">Gagal mengubah kontrol pengisian daya</string>
+    <string name="summary">Selama charger tercolok, baterai berhenti diisi di <xliff:g id="limit" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%1$d</xliff:g>%% dan HP berjalan langsung dari charger, jadi baterai lebih adem saat main game atau merekam video. Pengisian lanjut lagi saat baterai turun ke <xliff:g id="resume" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">%2$d</xliff:g>%%.\n\nDi bawah level itu HP mengisi daya seperti biasa. Fitur ini memakai Setelan > Baterai > Kontrol pengisian daya (mode batas); setelan sebelumnya dikembalikan saat bypass dimatikan.</string>
+</resources>

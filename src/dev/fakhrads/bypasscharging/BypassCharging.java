@@ -5,12 +5,14 @@
 
 package dev.fakhrads.bypasscharging;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.BatteryManager;
 import android.util.Log;
 
 import lineageos.health.HealthInterface;
+import lineageos.providers.LineageSettings;
 
 /**
  * Turns bypass charging on and off through Lineage Health charging control (limit mode).
@@ -25,6 +27,11 @@ import lineageos.health.HealthInterface;
  * The charging control settings in use before are saved and put back when it is turned off,
  * and BootReceiver turns it off after every boot. Nothing is written to sysfs directly and no
  * root is needed.
+ *
+ * The settings are written to LineageSettings.System for this user, not through the
+ * HealthInterface setters: those write for USER_CURRENT with the caller's identity, which needs
+ * INTERACT_ACROSS_USERS_FULL, a platform signature permission that an app updated outside the
+ * system image does not get on user builds. ChargingControlController observes the settings.
  */
 final class BypassCharging {
     private static final String TAG = "BypassCharging";
@@ -47,6 +54,7 @@ final class BypassCharging {
 
     private final Context mContext;
     private final HealthInterface mHealth;
+    private final ContentResolver mResolver;
     private final SharedPreferences mPrefs;
     private String mLastError;
 
@@ -59,6 +67,7 @@ final class BypassCharging {
             Log.e(TAG, "Lineage Health service unavailable", e);
         }
         mHealth = health;
+        mResolver = context.getContentResolver();
         // Device protected storage: usable before the first unlock (tile, boot receiver)
         mPrefs = context.createDeviceProtectedStorageContext()
                 .getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -143,12 +152,12 @@ final class BypassCharging {
         if (mPrefs.contains(KEY_SAVED_ENABLED)) {
             int mode = mPrefs.getInt(KEY_SAVED_MODE, HealthInterface.MODE_NONE);
             if (mode != HealthInterface.MODE_NONE) {
-                mHealth.setMode(mode);
+                putMode(mode);
             }
-            mHealth.setLimit(clampLimit(mPrefs.getInt(KEY_SAVED_LIMIT, SMART_LIMIT)));
-            mHealth.setEnabled(mPrefs.getBoolean(KEY_SAVED_ENABLED, false));
+            putLimit(clampLimit(mPrefs.getInt(KEY_SAVED_LIMIT, SMART_LIMIT)));
+            putEnabled(mPrefs.getBoolean(KEY_SAVED_ENABLED, false));
         } else if (mPrefs.contains(KEY_ACTIVE_LIMIT)) {
-            mHealth.setEnabled(false);
+            putEnabled(false);
         }
     }
 
@@ -163,12 +172,12 @@ final class BypassCharging {
         mPrefs.edit().putInt(KEY_ACTIVE_LIMIT, limit).apply();
         String error = null;
         try {
-            if (!mHealth.setMode(HealthInterface.MODE_LIMIT)) {
-                error = "setMode(MODE_LIMIT) returned false";
-            } else if (!mHealth.setLimit(limit)) {
-                error = "setLimit(" + limit + ") returned false";
-            } else if (!mHealth.setEnabled(true)) {
-                error = "setEnabled(true) returned false";
+            if (!putMode(HealthInterface.MODE_LIMIT)) {
+                error = "writing mode " + HealthInterface.MODE_LIMIT + " failed";
+            } else if (!putLimit(limit)) {
+                error = "writing limit " + limit + " failed";
+            } else if (!putEnabled(true)) {
+                error = "writing enabled failed";
             }
         } catch (RuntimeException e) {
             Log.e(TAG, "Charging control rejected limit " + limit, e);
@@ -186,6 +195,21 @@ final class BypassCharging {
         BatteryManager bm = mContext.getSystemService(BatteryManager.class);
         int level = bm == null ? -1 : bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
         return Math.min(level, 100);
+    }
+
+    private boolean putMode(int mode) {
+        return LineageSettings.System.putInt(mResolver,
+                LineageSettings.System.CHARGING_CONTROL_MODE, mode);
+    }
+
+    private boolean putLimit(int limit) {
+        return LineageSettings.System.putInt(mResolver,
+                LineageSettings.System.CHARGING_CONTROL_LIMIT, limit);
+    }
+
+    private boolean putEnabled(boolean enabled) {
+        return LineageSettings.System.putInt(mResolver,
+                LineageSettings.System.CHARGING_CONTROL_ENABLED, enabled ? 1 : 0);
     }
 
     /** The exception and the top of the remote stack trace (the check that refused it). */

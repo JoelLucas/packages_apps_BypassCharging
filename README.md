@@ -15,8 +15,11 @@ settings from before it was turned on come back whenever it is turned off.
 
 ## How it works
 
-The app only uses the Lineage SDK (`lineageos.health.HealthInterface`): it switches Settings > Battery > Charging
-control to limit mode with the limit above and enables it. The Lineage Health HAL then writes the MCA `smart_chg`
+The app only uses the Lineage SDK: it reads charging control through `lineageos.health.HealthInterface` and
+switches Settings > Battery > Charging control to limit mode with the limit above by writing
+`LineageSettings.System` for its own user, which `ChargingControlController` observes. (The `HealthInterface`
+setters write for `USER_CURRENT` with the caller's identity, which needs `INTERACT_ACROSS_USERS_FULL`; on user
+builds that platform signature permission is not granted to an app updated outside the system image.) The Lineage Health HAL then writes the MCA `smart_chg`
 node, configured in the device tree:
 
 | `smart_chg` value | meaning |

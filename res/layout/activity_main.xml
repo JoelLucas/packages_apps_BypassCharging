@@ -29,6 +29,15 @@
             android:paddingTop="4dp"
             android:textAppearance="?android:attr/textAppearanceSmall" />
 
+        <TextView
+            android:id="@+id/error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:textIsSelectable="true"
+            android:visibility="gone"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
         <RadioGroup
             android:id="@+id/modes"
             android:layout_width="match_parent"

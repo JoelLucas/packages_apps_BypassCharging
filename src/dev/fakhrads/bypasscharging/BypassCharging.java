@@ -129,7 +129,7 @@ final class BypassCharging {
             restoreSettings();
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to restore charging control", e);
-            mLastError = e.toString();
+            mLastError = describe(e);
         }
         mPrefs.edit()
                 .remove(KEY_ACTIVE_LIMIT)
@@ -172,7 +172,7 @@ final class BypassCharging {
             }
         } catch (RuntimeException e) {
             Log.e(TAG, "Charging control rejected limit " + limit, e);
-            error = e.toString();
+            error = describe(e);
         }
         if (error != null) {
             Log.e(TAG, "Failed to set charging control to limit " + limit + ": " + error);
@@ -186,6 +186,19 @@ final class BypassCharging {
         BatteryManager bm = mContext.getSystemService(BatteryManager.class);
         int level = bm == null ? -1 : bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
         return Math.min(level, 100);
+    }
+
+    /** The exception and the top of the remote stack trace (the check that refused it). */
+    private static String describe(RuntimeException e) {
+        StringBuilder sb = new StringBuilder(e.toString());
+        Throwable remote = e.getCause();
+        if (remote != null) {
+            StackTraceElement[] frames = remote.getStackTrace();
+            for (int i = 0; i < Math.min(frames.length, 6); i++) {
+                sb.append("\n  at ").append(frames[i]);
+            }
+        }
+        return sb.toString();
     }
 
     private static int clampLimit(int limit) {

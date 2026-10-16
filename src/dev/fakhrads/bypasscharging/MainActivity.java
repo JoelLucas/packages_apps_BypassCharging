@@ -7,11 +7,13 @@ package dev.fakhrads.bypasscharging;
 
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.service.quicksettings.TileService;
 import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.view.View;
 import android.widget.Toast;
 
 /** Opened from a long press on the tile: mode choice, the same switch, and what it does. */
@@ -20,6 +22,7 @@ public class MainActivity extends Activity {
     private Switch mSwitch;
     private RadioGroup mModes;
     private TextView mStatus;
+    private TextView mError;
     private boolean mRefreshing;
 
     @Override
@@ -30,6 +33,7 @@ public class MainActivity extends Activity {
         mSwitch = findViewById(R.id.bypass_switch);
         mModes = findViewById(R.id.modes);
         mStatus = findViewById(R.id.status);
+        mError = findViewById(R.id.error);
         ((TextView) findViewById(R.id.summary_smart)).setText(getString(R.string.summary_smart,
                 BypassCharging.SMART_LIMIT, BypassCharging.SMART_LIMIT - 3));
 
@@ -62,9 +66,26 @@ public class MainActivity extends Activity {
     }
 
     private void showFailed() {
+        Toast.makeText(this, R.string.toggle_failed, Toast.LENGTH_SHORT).show();
+        // Full reason and the grant state of each requested permission, selectable for copying
+        StringBuilder sb = new StringBuilder();
         String error = mBypass.getLastError();
-        String text = getString(R.string.toggle_failed);
-        Toast.makeText(this, error == null ? text : text + ": " + error, Toast.LENGTH_LONG).show();
+        sb.append(error == null ? "unknown error" : error);
+        try {
+            String[] perms = getPackageManager().getPackageInfo(getPackageName(),
+                    PackageManager.GET_PERMISSIONS).requestedPermissions;
+            if (perms != null) {
+                for (String perm : perms) {
+                    sb.append('\n').append(perm).append(": ")
+                            .append(checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED
+                                    ? "granted" : "DENIED");
+                }
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            // Not possible for our own package
+        }
+        mError.setText(sb);
+        mError.setVisibility(View.VISIBLE);
     }
 
     private void changed() {
